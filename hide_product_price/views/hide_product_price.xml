@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="hide_product_price" inherit_id="sale.portal_order_page">
+    <xpath expr="//span[@t-field='ol.price_unit']" position="attributes"> 
+        <attribute name="groups">sales_team.group_sale_manager</attribute>     
+    </xpath>
+     <xpath expr="//div[hasclass('row')][2]" position="replace"> 
+            <div class="row">
+                <div class="col-md-6">
+                <strong>Product</strong>
+                </div>
+                <div class="hidden-sm hidden-xs col-md-2 text-right">
+                  <strong groups='sales_team.group_sale_manager'>Unit Price</strong>
+                </div>
+                <div class="hidden-sm hidden-xs col-md-2 text-right">
+                  <strong>Quantity</strong>
+                </div>
+                <div class="hidden-sm hidden-xs col-md-2 text-right">
+                  <strong>Subtotal</strong>
+                </div> 
+            </div>   
+    </xpath>
+    </template>
+</odoo>
