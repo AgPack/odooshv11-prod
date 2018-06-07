@@ -1,24 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="hide_product_price" inherit_id="sale.portal_order_page">
-    <xpath expr="//span[@t-field='ol.price_unit']" position="attributes"> 
-        <attribute name="groups">sales_team.group_sale_manager</attribute>     
-    </xpath>
-     <xpath expr="//div[hasclass('row')][2]" position="replace"> 
+        <xpath expr="//span[@t-field='ol.price_unit']" position="attributes">
+            <attribute name="groups">sales_team.group_sale_manager</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('row')][2]" position="replace">
             <div class="row">
                 <div class="col-md-6">
-                <strong>Product</strong>
+                    <strong>Product</strong>
                 </div>
                 <div class="hidden-sm hidden-xs col-md-2 text-right">
-                  <strong groups='sales_team.group_sale_manager'>Unit Price</strong>
+                    <strong groups="sales_team.group_sale_manager">Unit Price</strong>
                 </div>
                 <div class="hidden-sm hidden-xs col-md-2 text-right">
-                  <strong>Quantity</strong>
+                    <strong>Quantity</strong>
                 </div>
                 <div class="hidden-sm hidden-xs col-md-2 text-right">
-                  <strong>Subtotal</strong>
-                </div> 
-            </div>   
-    </xpath>
+                    <strong>Subtotal</strong>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="website_quote_pricing_hide_product_price" inherit_id="website_quote.pricing">
+        <xpath expr="//table[hasclass('wq-table')]" position="replace">
+            <table class="table wq-table">
+                <thead>
+                    <tr>
+                        <th>Products</th>
+                        <th>Quantity</th>
+                        <th>
+                            <span t-if="any([line.tax_id for line in quotation.order_line])">Taxes</span>
+                        </th>
+                        <th>
+                            <span t-if="True in [line.discount &gt; 0 for line in quotation.order_line]">Discount</span>
+                        </th>
+                        <th class="text-right" groups="sales_team.group_sale_manager">Unit Price</th>
+                        <th class="text-right" groups="sale.group_show_price_subtotal">Amount</th>
+                        <th class="text-right price_tax_included" groups="sale.group_show_price_total">Total Price</th>
+                        <th />
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="page" t-as="layout_category">
+                        <t t-if="layout_category_size &gt; 1 or page_size &gt; 1" groups="sale.group_sale_layout">
+                            <tr class="active">
+                                <td colspan="7" style="font-weight: bold; border-bottom: 1px solid black;">&amp;bull;
+                                        <t t-esc="layout_category['name']" /></td>
+                            </tr>
+                        </t>
+                        <!-- Lines associated -->
+                        <t t-foreach="layout_category['lines']" t-as="line">
+                            <tr>
+                                <td>
+                                    <span t-field="line.name" />
+                                </td>
+                                <td>
+                                    <div id="quote_qty">
+                                        <span t-field="line.product_uom_qty" />
+                                        <span t-field="line.product_uom" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div t-foreach="line.tax_id" t-as="tax">
+                                        <t t-esc="tax.name" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong t-if="line.discount" class="text-info">
+                                        <t t-esc="((line.discount % 1) and '%s' or '%d') % line.discount" />% discount
+                                      </strong>
+                                </td>
+                                <td class="text-right" groups="sales_team.group_sale_manager">
+                                    <div t-field="line.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: quotation.pricelist_id.currency_id}" t-att-style="line.discount and 'text-decoration: line-through' or None" t-att-class="(line.discount and 'text-danger' or '') + ' text-right'" />
+                                    <div t-if="line.discount">
+                                        <t t-esc="(1-line.discount / 100.0) * line.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: quotation.pricelist_id.currency_id}" />
+                                    </div>
+                                </td>
+                                <td class="text-right" groups="sale.group_show_price_subtotal">
+                                    <span t-field="line.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: quotation.pricelist_id.currency_id}" />
+                                </td>
+                                <td class="text-right" groups="sale.group_show_price_total">
+                                    <span t-field="line.price_total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: quotation.pricelist_id.currency_id}" />
+                                </td>
+                                <td class="text-center">
+                                    <a t-attf-href="./update_line/#{ line.id }/?order_id=#{ quotation.id }&amp;unlink=True&amp;token=#{ quotation.access_token }" class="mb8 js_update_line_json hidden-print" t-if="line.option_line_id">
+                                        <span class="fa fa-trash-o" />
+                                    </a>
+                                </td>
+                            </tr>
+                        </t>
+                        <t t-if="(layout_category_size &gt; 1  or page_size &gt; 1) and layout_category['subtotal']" groups="sale.group_sale_layout">
+                            <tr>
+                                <td />
+                                <td />
+                                <td />
+                                <td groups="sales_team.group_sale_manager" style="padding-bottom: 32px" />
+                                <td class="text-right" style="padding-bottom: 32px">
+                                    <strong>Subtotal:</strong>
+                                </td>
+                                <td class="text-right">
+                                    <t t-set="subtotal" t-value="sum(line.price_subtotal for line in layout_category['lines'])" />
+                                    <strong data-id="total_amount" t-esc="subtotal" t-options="{'widget': 'monetary', 'display_currency': quotation.pricelist_id.currency_id}" />
+                                </td>
+                                <td />
+                            </tr>
+                        </t>
+                    </t>
+                    <t t-if="page_index == page_size - 1">
+                        <t t-if="any([line.tax_id for line in quotation.order_line])">
+                            <tr>
+                                <td />
+                                <td />
+                                <td />
+                                <td groups="sales_team.group_sale_manager" style="padding-bottom: 32px" />
+                                <td class="text-right">
+                                    <strong>Subtotal:</strong>
+                                </td>
+                                <td class="text-right">
+                                    <strong data-id="total_amount" t-field="quotation.amount_untaxed" t-options="{&quot;widget&quot;: &quot;monetary&quot;,&quot;display_currency&quot;: quotation.pricelist_id.currency_id}" />
+                                </td>
+                                <td />
+                            </tr>
+                            <tr>
+                                <td />
+                                <td />
+                                <td />
+                                <td groups="sales_team.group_sale_manager" style="padding-bottom: 32px" />
+                                <td class="text-right">Taxes:</td>
+                                <td class="text-right">
+                                    <span data-id="total_amount" t-field="quotation.amount_tax" t-options="{&quot;widget&quot;: &quot;monetary&quot;,&quot;display_currency&quot;: quotation.pricelist_id.currency_id}" />
+                                </td>
+                                <td />
+                            </tr>
+                        </t>
+                        <tr>
+                            <td />
+                            <td />
+                            <td />
+                            <td groups="sales_team.group_sale_manager" style="padding-bottom: 32px" />
+                            <td class="text-right">
+                                <strong>Total:</strong>
+                            </td>
+                            <td class="text-right">
+                                <strong data-id="total_amount" t-field="quotation.amount_total" t-options="{&quot;widget&quot;: &quot;monetary&quot;,&quot;display_currency&quot;: quotation.pricelist_id.currency_id}" />
+                            </td>
+                            <td />
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </xpath>
     </template>
 </odoo>

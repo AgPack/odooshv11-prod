@@ -9,7 +9,7 @@
     "license": "LGPL-3",
     "application": False,
     'installable': True,
-    "depends": ["mail", "website", "website_sale", "sale"],
+    "depends": [ "website_sale", "website_quote"],
     "data": [
         "views/hide_product_price.xml",
     ],
