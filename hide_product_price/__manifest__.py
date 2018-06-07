@@ -9,11 +9,8 @@
     "license": "LGPL-3",
     "application": False,
     'installable': True,
-    "depends": [
-        "website","website_sale","sale",
-    ],
+    "depends": ["mail", "website", "website_sale", "sale"],
     "data": [
-        "security/hide_chatter_price_security.xml",
         "views/hide_product_price.xml",
     ],
 }
