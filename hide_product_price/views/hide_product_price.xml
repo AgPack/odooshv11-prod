@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<template id="hide_product_price" inherit_id="sale.portal_order_page">
+    <xpath expr="//span[@t-field='ol.price_unit']" position="attributes"> 
+        <attribute name="groups">sales_team.group_sale_manager</attribute>     
+    </xpath>
+     <xpath expr="//div[hasclass('row')][2]" position="replace"> 
+            <div class="row">
+                <div class="col-md-6">
+                <strong>Product</strong>
+                </div>
+                <div class="hidden-sm hidden-xs col-md-2 text-right">
+                  <strong groups='sales_team.group_sale_manager'>Unit Price</strong>
+                </div>
+                <div class="hidden-sm hidden-xs col-md-2 text-right">
+                  <strong>Quantity</strong>
+                </div>
+                <div class="hidden-sm hidden-xs col-md-2 text-right">
+                  <strong>Subtotal</strong>
+                </div> 
+            </div>   
+    </xpath>
+</template>
+
+<template id="hide_product_price_quote" inherit_id="website_quote.pricing">
+    <xpath expr="//thead/tr" position="replace">
+        <tr>
+            <th>Products</th>
+            <th>Quantity</th>
+            <th><span t-if="any([line.tax_id for line in quotation.order_line])" groups="sales_team.group_sale_manager">Taxes</span></th>
+            <th><span t-if="True in [line.discount > 0 for line in quotation.order_line]" groups="sales_team.group_sale_manager">Discount</span></th>
+            <th class="text-right" groups="sales_team.group_sale_manager">Unit Price</th>
+            <th class="text-right" groups="sales_team.group_sale_manager">Amount</th>
+            <th class="text-right price_tax_included" groups="sale.group_show_price_total">Total Price</th>
+            <th></th>
+        </tr>
+    </xpath>
+    <xpath expr="//div[@t-field='line.price_unit']" position="attributes">
+        <attribute name="groups">sales_team.group_sale_manager</attribute>
+    </xpath>
+    <xpath expr="//div[@t-as='tax']" position="attributes">
+        <attribute name="groups">sales_team.group_sale_manager</attribute>
+    </xpath>
+    <xpath expr="//strong[@t-if='line.discount']" position="attributes">
+        <attribute name="groups">sales_team.group_sale_manager</attribute>
+    </xpath>
+    <xpath expr="//div[@t-if='line.discount']" position="attributes">
+        <attribute name="groups">sales_team.group_sale_manager</attribute>
+    </xpath>
+    <xpath expr="//span[@t-field='line.price_subtotal']" position="attributes">
+        <attribute name="groups">sales_team.group_sale_manager</attribute>
+    </xpath>
+    <xpath expr="//span[@t-field='line.price_total']" position="attributes">
+        <attribute name="groups">sales_team.group_sale_manager</attribute>
+    </xpath>
+    <xpath expr="//t[@t-if='page_index == page_size - 1']" position="attributes">
+        <attribute name="groups">sales_team.group_sale_manager</attribute>
+    </xpath>
+</template>
+
+<template id="hide_product_price_sign" inherit_id="website_quote.so_quotation">
+    <xpath expr="//div[@t-if='not quotation.require_payment and not need_payment']//div[@id='sign-dialog']" position='replace'>
+        <div class="modal-body" id="sign-dialog">
+            <p>
+                <span>I agree that by signing this proposal, I
+                accept it on the behalf of </span><b t-field="quotation.partner_id.commercial_partner_id"/><span groups='sales_team.group_sale_manager'>, for an amount of </span>
+                <b data-id="total_amount" t-field="quotation.amount_total"
+                    t-options='{"widget": "monetary", "display_currency": quotation.pricelist_id.currency_id}' groups='sales_team.group_sale_manager'/>
+                <span>with payment terms: </span><b t-field="quotation.payment_term_id"/>.
+            </p>
+            <t t-call="portal.portal_signature">
+                <t t-set="object" t-value="quotation"/>
+                <t t-set="partner_name" t-value="quotation.partner_id.name"/>
+                <t t-set="callUrl" t-value="'/my/quotes/accept'"/>
+                <t t-set="accessToken" t-value="quotation.access_token"/>
+            </t>
+        </div>
+    </xpath>
+    <xpath expr="//div[@t-if='quotation.require_payment or need_payment']//div[@id='sign-dialog']" position='replace'>
+        <div class="modal-body" id="sign-dialog">
+        <p>
+            <span>I agree that by paying this proposal, I
+            accept it on the behalf of </span><b t-field="quotation.partner_id.commercial_partner_id"/><span groups='sales_team.group_sale_manager'>, for an amount of </span>
+            <b data-id="total_amount" t-field="quotation.amount_total"
+              t-options='{"widget": "monetary", "display_currency": quotation.pricelist_id.currency_id}' groups='sales_team.group_sale_manager'/>
+            <span>with payment terms: </span><b t-field="quotation.payment_term_id"/>.
+        </p>
+        </div>
+    </xpath>
+    <xpath expr="//div[@t-if='quotation.amount_undiscounted &gt; quotation.amount_untaxed']" position='attributes'>
+        <attribute name='groups'>sales_team.group_sale_manager</attribute>
+    </xpath>
+</template>
+
+<template id="report_saleorder_document_without_price" inherit_id="sale.report_saleorder_document">
+    <xpath expr='//thead/tr' position='replace'>
+        <tr>
+            <th>Description</th>
+            <th class="text-right">Quantity</th>
+            <th class="text-right" groups='sales_team.group_sale_manager'>Unit Price</th>
+            <th t-if="display_discount" class="text-right" groups="sales_team.group_sale_manager">Disc.(%)</th>
+            <th class="text-right" groups='sales_team.group_sale_manager'>Taxes</th>
+            <th class="text-right" groups="sales_team.group_sale_manager">Amount</th>
+            <th class="text-right price_tax_included" groups="sales_team.group_sale_manager">Total Price</th>
+        </tr>
+    </xpath>
+    <xpath expr="//t[@t-as='l']" position='replace'>
+        <t t-foreach="layout_category['lines']" t-as="l">
+            <tr>
+                <td><span t-field="l.name"/></td>
+                <td class="text-right">
+                    <span t-field="l.product_uom_qty"/>
+                    <span t-field="l.product_uom" groups="product.group_uom"/>
+                </td>
+                <td class="text-right">
+                    <span t-field="l.price_unit" groups='sales_team.group_sale_manager'/>
+                </td>
+                <td t-if="display_discount" class="text-right" groups="sales_team.group_sale_manager">
+                    <span t-field="l.discount"/>
+                </td>
+                <td class="text-right" groups='sales_team.group_sale_manager'>
+                    <span t-esc="', '.join(map(lambda x: (x.description or x.name), l.tax_id))"/>
+                </td>
+                <td class="text-right" groups="sales_team.group_sale_manager">
+                    <span t-field="l.price_subtotal"
+                        t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}'/>
+                </td>
+                <td class="text-right" groups="sales_team.group_sale_manager">
+                    <span t-field="l.price_total"
+                        t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}'/>
+                </td>
+            </tr>
+        </t>
+    </xpath>
+    <xpath expr="//div[@name='total']" position='attributes'>
+        <attribute name='groups'>sales_team.group_sale_manager</attribute>
+    </xpath>
+</template>
+</odoo>
